@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control del Robot</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: #f4f4f4;
+    }
+    .control-btn {
+      font-size: 20px;
+      padding: 15px 30px;
+      margin: 10px;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+      background-color: #007BFF;
+      color: white;
+    }
+    .control-btn:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>Control del Robot</h1>
+  <div>
+    <button class="control-btn" onclick="sendCommand('F')">Avanzar</button>
+    <button class="control-btn" onclick="sendCommand('B')">Retroceder</button>
+    <button class="control-btn" onclick="sendCommand('L')">Izquierda</button>
+    <button class="control-btn" onclick="sendCommand('R')">Derecha</button>
+    <button class="control-btn" onclick="sendCommand('S')">Parar</button>
+    <button class="control-btn" onclick="sendCommand('C')">Activar Corte</button>
+    <button class="control-btn" onclick="sendCommand('X')">Desactivar Corte</button>
+    <button class="control-btn" onclick="connectToRobot()">Conectar al Robot</button>
+  </div>
+
+  <script>
+    let bleDevice;
+    let bleCharacteristic;
+
+    async function connectToRobot() {
+      try {
+        bleDevice = await navigator.bluetooth.requestDevice({
+          filters: [{ services: ['4fafc201-1fb5-459e-8fcc-c5c9c331914b'] }]
+        });
+
+        const server = await bleDevice.gatt.connect();
+        const service = await server.getPrimaryService('4fafc201-1fb5-459e-8fcc-c5c9c331914b');
+        bleCharacteristic = await service.getCharacteristic('beb5483e-36e1-4688-b7f5-ea07361b26a8');
+
+        console.log('Conectado al robot');
+      } catch (error) {
+        console.error('Error conectando:', error);
+      }
+    }
+
+    async function sendCommand(command) {
+      if (!bleCharacteristic) {
+        console.log('No está conectado al robot.');
+        return;
+      }
+
+      const encoder = new TextEncoder();
+      const value = encoder.encode(command);
+      await bleCharacteristic.writeValue(value);
+      console.log('Comando enviado:', command);
+    }
+  </script>
+</body>
+</html>
